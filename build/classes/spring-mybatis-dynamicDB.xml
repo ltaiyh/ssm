@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.2.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+		http://www.springframework.org/schema/aop 
+		http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+		
+	<context:component-scan base-package="cn.lt.service,cn.lt.aspect" />
+		
+	<bean class="cn.lt.util.MyPropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:jdbc.properties</value>
+            </list>
+        </property>
+    </bean>
+		
+	<!-- 配置多数据源 -->
+	<bean id="dataSourceMaster" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${jdbc.driver}"/>
+		<property name="url" value="${jdbc.url.master}"/>
+		<property name="username" value="${jdbc.username}"/>
+		<property name="password" value="${jdbc.password}"/>
+	</bean>	
+	
+	<bean id="dataSourceSlave" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${jdbc.driver}"/>
+		<property name="url" value="${jdbc.url.slave}"/>
+		<property name="username" value="${jdbc.username}"/>
+		<property name="password" value="${jdbc.password}"/>
+	</bean>	
+	
+	<bean id="dynamicDataSource" class="cn.lt.util.DynamicDataSource" >  
+	    <!-- 通过key-value的形式来关联数据源 -->  
+	    <property name="targetDataSources">  
+	        <map>  
+	            <entry key="dataSourceMaster" value-ref="dataSourceMaster" />  
+	            <entry key="dataSourceSlave" value-ref="dataSourceSlave" />  
+	        </map>  
+	    </property>  
+	    <property name="defaultTargetDataSource" ref="dataSourceMaster" />  
+	</bean>  
+	
+		
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dynamicDataSource" />
+		<property name="typeAliasesPackage" value="cn.lt.model" />
+		<property name="mapperLocations" value="classpath:cn/lt/xml/*.xml" />
+	</bean>
+	
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="cn.lt.mapper" />
+	</bean>
+	
+	<!-- 配置数据源切换切面 -->  
+	<!-- 自动为配置@aspect切面的bean创建代理 -->
+	<aop:aspectj-autoproxy />
+	
+	<!-- 使用@Component替代，让spring自动扫描 -->
+    <!-- <bean id="dataSourceChangeAspect" class="cn.lt.aspect.DataSourceAspect">  
+    </bean> -->
+	
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dynamicDataSource" />
+	</bean>
+	
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="*" propagation="REQUIRED" />  
+        </tx:attributes>
+    </tx:advice>
+    
+	<aop:config>  
+        <aop:pointcut id="serviceAop"  
+            expression="execution(* cn.lt.service..*.*(..)))" />  
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="serviceAop" order="2"/>  
+          
+        <!-- 配置数据源的动态切换 --> 
+        <!-- 使用@Before("execution(* cn.lt.service.*.*(..)))")替代 --> 
+        <aop:aspect ref="dataSourceAspect" order="1">  
+        	<!-- 二选一 -->
+            <aop:before method="doBefore" pointcut-ref="serviceAop"/>  
+            <!-- <aop:before method="doBefore" pointcut="@annotation(cn.lt.annotation.DataSource)"/> -->
+        </aop:aspect>  
+    </aop:config>  
+	
+</beans>

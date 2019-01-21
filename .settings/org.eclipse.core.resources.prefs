@@ -1,0 +1,10 @@
+eclipse.preferences.version=1
+encoding//WebContent/WEB-INF/view/user/userInfo.jsp=UTF-8
+encoding//config/jdbc.properties=UTF-8
+encoding//config/log4j.properties=UTF-8
+encoding//config/note.txt=UTF-8
+encoding//config/redis.properties=UTF-8
+encoding//src/cn/lt/digest=UTF-8
+encoding//src/cn/lt/redis/LogTest.java=UTF-8
+encoding/<project>=UTF-8
+encoding/config=UTF-8

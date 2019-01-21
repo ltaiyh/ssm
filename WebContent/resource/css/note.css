@@ -1,0 +1,40 @@
+
+#note_div {
+	display:none;
+	position:absolute;
+	border:1px solid #e0e0e0;
+	z-index:99;
+}
+
+#note_div:hover {
+	display:block;
+}
+
+#note_div .title {
+	line-height:32px;
+	background:#f6f0f3;
+	border-bottom:1px solid #e0e0e0;
+	font-size:14px;
+	padding:0 0 0 10px;
+}
+
+#note_div .title .left {
+	float:left;
+}
+
+#note_div .title .close {
+	float:right;
+	cursor:pointer;
+}
+
+#note_div .title .close b {
+	font-size: 20px;
+}
+
+#note_div .title .close b:hover {
+	color:red;
+}
+
+#note_div .title .clear {
+	clear:both;
+}
